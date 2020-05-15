@@ -1,0 +1,11 @@
+.*** SYSTEM DTCPARMS
+.*** github.com/viccross/zVM-files/TCPIP/TCPMAINT.198/SYSTEM.DTCPARMS
+.***
+:nick.TCPIP    :type.server                                  
+               :class.stack                                  
+               :DCSS_Parms.<DEFAULT>                         
+               :attach.C000 as 0600,C001 as 0601,C002 as 0602
+:nick.LDAPSRV  :type.server                                  
+               :class.ldap                                   
+               :ESM_Enable.Yes                               
+               :ESM_Racroute.LDAPESM                         
