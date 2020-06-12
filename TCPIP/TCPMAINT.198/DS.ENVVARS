@@ -1,0 +1,16 @@
+# DS ENVVARS
+# Environment variables for LDAPSRV
+#
+NLSPATH=/usr/lib/nls/msg/%L/%N
+#
+LANG=En_US.IBM-1047
+#
+#LIBPATH=/usr/lib
+#
+#TZ=GMT0
+#
+#IRR.PWENV.KEYFILE=./IRR.PWENV.KEYRING
+#
+# GSK Variables for TLSv1.1 and TLSv1.2 support
+GSK_PROTOCOL_TLSV1_1=ON
+GSK_PROTOCOL_TLSV1_2=ON
