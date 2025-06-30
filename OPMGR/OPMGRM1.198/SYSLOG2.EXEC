@@ -1,0 +1,61 @@
+/* REXX */
+/* Syslog sender using REXX Sockets */
+Address CMS
+Parse Arg MsgT TheRest
+
+If MsgT = "VMEV" Then Do
+  Parse Var TheRest Class Type Object Data
+  If Object = "*UNKNOWN" Then Do
+    Object = X2C(SubStr(Data,1,16))
+    Data = SubStr(Data,17)
+  End
+  Call VMEVDECO Class Type Object Data
+  Text = Result
+  App = 'VMEVENT'
+End
+Else Do
+  Parse Var TheRest Object Text
+  App = 'VMCONS'
+End
+
+RetVal=Socket('INITIALIZE','Syslog',1)
+Parse Var RetVal RC Info
+If RC \= 0 Then Do
+  Say "Error initialising Sockets: " Info
+  Exit
+End
+RetVal=Socket('SOCKET',2,'SOCK_DGRAM','IPPROTO_UDP')
+Parse Var RetVal RC Sock
+If RC \= 0 Then Do
+  Say "Error setting socket: " Sock
+  Exit
+End
+RetVal=Socket('SETSOCKOPT',Sock,'SOL_SOCKET','SO_ASCII','On SYSLOG')
+Parse Var RetVal RC Info
+If RC \= 0 Then Do
+  Say "Error setting socket option: " Info
+  Exit
+End
+
+/*      Make up the message             */
+/* more-or-less conformant to RFC 5424  */
+/* Facility=local1, severity=Info = 142 */
+Hdr = '<142>1'
+Time = '-'
+Proc = '-'
+MsgID = '-'
+Parse value diag(8,'QUERY USERID') with ' AT ' sysname '15'x .
+SD = '[zVMESI@2 zvmname="' || sysname || '"]'
+/* SD = 'ÝzVMESI@2 zvmname="' || sysname || '"¨' */
+Message = Hdr Time Object App Proc MsgID SD Text
+
+RetVal=Socket('SENDTO',Sock,Message,'','2 514 172.24.26.1')
+Parse Var RetVal RC Count
+If RC \= 0 Then Do
+  Say "Error sending data: RC=" RC
+End
+RetVal=Socket('TERMINATE','Syslog')
+Parse Var RetVal RC Info
+If RC \= 0 Then Do
+  Say "Error terminating Sockets: " Info
+End

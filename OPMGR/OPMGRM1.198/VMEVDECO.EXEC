@@ -1,0 +1,528 @@
+/* VMEVDECO EXEC */
+/* Copyright (c) 2024 IBM Corporation */
+/* Author: Vic Cross                  */
+
+Parse Arg Class Type Object Payload
+
+Select
+  When Class = "0" then Select
+    When Type = "0" then do
+      Parse Var Payload Logonby TermData
+      If Length(Logonby) = 2 then Do
+        TermData = Logonby TermData
+        Logonby = "        "
+      End
+      Terminfo = TermInfoDecode(TermData)
+      Outstr=Object "logon:"
+      If Logonby \= "        " Then
+        Outstr=Outstr" Logon-by:" Logonby
+      OutStr=Outstr" "Terminfo
+      Return Outstr
+    End
+    When Type = "1" then do
+      Outstr=Object "logoff"
+      Return Outstr
+    End
+    When Type = "2" then do
+      Outstr=Payload
+      Outstr=Object "user failure:" ,
+             || " Reason Code" Outstr
+      Return Outstr
+    End
+    When Type = "3" then do
+      Parse Var Payload TO16 TO32
+      Outstr=Object "logoff timeout started:"
+      If TO32 \= "" Then
+        Outstr=Outstr" Interval " TO32
+      Else
+        Outstr=Outstr" Interval " TO16
+      OutStr=Outstr "seconds"
+      Return Outstr
+    End
+    When Type = "4" then do
+      Outstr=Object "forced SLEEP start"
+      Return Outstr
+    End
+    When Type = "5" then do
+      Outstr=Object "runnable state entered"
+      Return Outstr
+    End
+    When Type = "6" then do
+      Outstr=Object "free storage limit exceeded"
+      Return Outstr
+    End
+    When Type = "9" then do
+      DestSys = Payload
+      Outstr=Object "Outbound relocation started:"
+      OutStr=Outstr" destination system" DestSys
+      Return Outstr
+    End
+    When Type = "10" then do
+      SrcSys = Payload
+      Outstr=Object "Inbound relocation started:"
+      OutStr=Outstr" source system" SrcSys
+      Return Outstr
+    End
+    When Type = "11" then do
+      DestSys = Payload
+      Outstr=Object "Outbound relocation complete:"
+      OutStr=Outstr" destination system" DestSys
+      Return Outstr
+    End
+    When Type = "12" then do
+      SrcSys = Payload
+      Outstr=Object "Inbound relocation complete:"
+      OutStr=Outstr" source system" SrcSys
+      Return Outstr
+    End
+    When Type = "13" then do
+      ReasonC = Payload
+      Outstr=Object "Outbound relocation terminated:"
+      OutStr=Outstr" "ReloTermC(ReasonC)
+      Return Outstr
+    End
+    When Type = "14" then do
+      ReasonC = Payload
+      Outstr=Object "Inbound relocation terminated:"
+      OutStr=Outstr" "ReloTermC(ReasonC)
+      Return Outstr
+    End
+    When Type = "15" then do
+      Outstr=Object "Timebomb exploded"
+      Return Outstr
+    End
+    When Type = "26" then do
+      Outstr=Object "operating system identified:"
+      OSID = Payload
+      Select
+        When OSID = '00' then Outstr=Outstr "unknown OS"
+        When OSID = '04' then Outstr=Outstr "Inferred Linux"
+        When OSID = '08' then Outstr=Outstr "Explicitly Linux"
+        Otherwise Outstr=Outstr "unknown OS type" OSID
+      End
+      Return Outstr
+    End
+    When Type = "27" then do
+      Outstr=Object "virtual system reset"
+      Return Outstr
+    End
+    When Type = "28" then do
+      Parse Var Payload Logonby TermData
+      If Length(Logonby) = 2 then Do
+        TermData = Logonby TermData
+        Logonby = "        "
+      End
+      Terminfo = TermInfoDecode(TermData)
+      Outstr=Object "reconnected:"
+      If Logonby \= "        " Then
+        Outstr=Outstr" Logon-by:" Logonby
+      OutStr=Outstr" "Terminfo
+      Return Outstr
+    End
+    When Type = "29" then do
+      Outstr=Object "disconnecting"
+      Return Outstr
+    End
+    Otherwise Return "Invalid or undocumented Class" Class "/ Type" Type
+  End /* Select Type */
+  When Class = "1" then Select
+    When Type = "2" then do
+      ReasonC = Payload
+      Outstr=Object "failure condition exists:"
+      OutStr=Outstr" Reason Code" ReasonC
+      Return Outstr
+    End
+    When Type = "3" then do
+      Parse Var Payload TO16 TO32
+      Outstr=Object "logoff timeout in progress:"
+      If TO32 \= "" Then
+        Outstr=Outstr" "TO32
+      Else
+        Outstr=Outstr" "TO16
+      OutStr=Outstr "seconds remain"
+      Return Outstr
+    End
+    When Type = "4" then do
+      Outstr=Object "subject to forced SLEEP"
+      Return Outstr
+    End
+    When Type = "6" then do
+      Outstr=Object "free storage limit exceeded"
+      Return Outstr
+    End
+    When Type = "9" then do
+      DestSys = Payload
+      Outstr=Object "Outbound relocation in progress:"
+      OutStr=Outstr" destination system" DestSys
+      Return Outstr
+    End
+    When Type = "10" then do
+      SrcSys = Payload
+      Outstr=Object "Inbound relocation in progress:"
+      OutStr=Outstr" source system" SrcSys
+      Return Outstr
+    End
+    Otherwise Return "Invalid or undocumented Class" Class "/ Type" Type
+  End /* Select Type */
+  When Class = "2" then Select
+    When Type = "7" then do
+      Parse Var Payload PrevMode NewMode
+      OutStr=Object "SSI mode change:"
+      OutStr=OutStr "previous mode" SSIMode(PrevMode)
+      OutStr=OutStr ", new mode" SSIMode(NewMode)
+      Return Outstr
+    End
+    When Type = "8" then do
+      Parse Var Payload MemName PrevState NewState
+      OutStr=Object "SSI member state change:" MemName
+      OutStr=OutStr " previous state" SSIMemState(PrevState)
+      OutStr=OutStr ", new state" SSIMemState(NewState)
+      Return Outstr
+    End
+  End /* Select Type */
+  When Class = "4" then Select
+    When Type = "16" then do
+      Outstr="VSwitch" Object "device active: "
+      Outstr=Outstr || VSwitchStat(Payload)
+      Return Outstr
+    End
+    When Type = "17" then do
+      Outstr="VSwitch" Object "additional device: "
+      Outstr=Outstr || VSwitchStat(Payload)
+      Return Outstr
+    End
+    When Type = "18" then do
+      Outstr="VSwitch" Object "deactivated device (LAN up): "
+      Outstr=Outstr || VSwitchStat(Payload)
+      Return Outstr
+    End
+    When Type = "19" then do
+      Outstr="VSwitch" Object "deactivated device (LAN down): "
+      Outstr=Outstr || VSwitchStat(Payload)
+      Return Outstr
+    End
+    When Type = "20" then do
+      Outstr="VSwitch" Object "bridge activated: "
+      Outstr=Outstr || HSIBrdgStat(Payload)
+      Return Outstr
+    End
+    When Type = "21" then do
+      Outstr="VSwitch" Object "bridge deactivated: "
+      Outstr=Outstr || HSIBrdgStat(Payload)
+      Return Outstr
+    End
+    When Type = "22" then do
+      Outstr="Global VSwitch" Object "bridge takeover: "
+      Outstr=Outstr || GVSwStat(Payload)
+      Return Outstr
+    End
+    When Type = "23" then do
+      Outstr="Global VSwitch" Object "bridge deactivated: "
+      Outstr=Outstr || GVSwStat(Payload)
+      Return Outstr
+    End
+    When Type = "24" then do
+      Outstr="System" Object "joined IVL "
+      Outstr=Outstr || IVLStat(Payload)
+      Return Outstr
+    End
+    When Type = "25" then do
+      Outstr="System" Object "left IVL "
+      Outstr=Outstr || IVLStat(Payload)
+      Return Outstr
+    End
+    Otherwise Return "not yet known"
+  End
+  Otherwise Return "Not yet implemented"
+End /* Select Class */
+Exit                  /* save me from the procs */
+
+TermInfoDecode:
+  Parse Arg TIDI mode DevOrLU Owner Origin
+  Select
+    When TIDI='00' Then Do
+      Out="Disconnected, terminal mode" Conmode(mode)
+      Return Out
+    End
+    When TIDI='01' Then Do
+      Out="Local 3270, terminal mode" Conmode(mode)
+      Out=Out", Dev" Rdev(DevOrLU)
+      Return Out
+    End
+    When TIDI='02' Then Do
+      Out="Logical terminal, mode" Conmode(mode)
+      Out=Out", Dev" Ldev(DevOrLU)
+      Out=Out", owner" Strip(Owner)
+      Out=Out", IP addr" IPAddr(Origin)
+      Return Out
+    End
+    When TIDI='03' Then Do
+      Out="VTAM terminal, mode" Conmode(mode)
+      Out=Out", LU name" Strip(DevOrLU)
+      Out=Out", owner" Strip(Owner)
+      Return Out
+    End
+    When TIDI='04' Then Do
+      Out="line-mode SYSC, terminal mode" Conmode(mode)
+      Return Out
+    End
+    When TIDI='05' Then Do
+      Out="3270-mode SYSG, terminal mode" Conmode(mode)
+      Return Out
+    End
+    Otherwise Do
+      Out="no ident, terminal mode" Conmode(mode)
+      Return Out
+    End
+  End
+
+Conmode:
+  Parse Arg Mode
+  Select
+    When Mode='00' Then Return "none"
+    When Mode='01' Then Return "3215"
+    When Mode='02' Then Return "3270"
+    Otherwise
+  End
+
+RDev:
+  Parse Arg Devr
+  OutR="SSID="Substr(Devr,3,2)
+  OutR=OutR", RDev="Substr(Devr,5,4)
+  Return OutR
+
+LDev:
+  Parse Arg Devl
+  OutL="LDev="Substr(Devl,5,4)
+  Return OutL
+
+MAC:
+  Parse Arg MACField
+  Return C2X(Substr(MACField,1,1))":",
+     ||  C2X(Substr(MACField,2,1))":",
+     ||  C2X(Substr(MACField,3,1))":",
+     ||  C2X(Substr(MACField,4,1))":",
+     ||  C2X(Substr(MACField,5,1))":",
+     ||  C2X(Substr(MACField,6,1))
+
+IPAddr:
+  Parse Arg Type Addr
+  Select
+    When Type='00' Then
+      Return "not provided"
+    When Type='01' Then
+      Return X2D(Substr(Addr,1,2))".",
+         ||  X2D(Substr(Addr,3,2))".",
+         ||  X2D(Substr(Addr,5,2))".",
+         ||  X2D(Substr(Addr,7,2))
+    When Type='02' Then
+      Return X2D(Substr(Addr,1,2))":",
+         ||  X2D(Substr(Addr,3,2))":",
+         ||  X2D(Substr(Addr,5,2))":",
+         ||  X2D(Substr(Addr,7,2))":",
+         ||  X2D(Substr(Addr,9,2))":",
+         ||  X2D(Substr(Addr,11,2))":",
+         ||  X2D(Substr(Addr,13,2))":",
+         ||  X2D(Substr(Addr,15,2))":",
+         ||  X2D(Substr(Addr,17,2))":",
+         ||  X2D(Substr(Addr,19,2))":",
+         ||  X2D(Substr(Addr,21,2))":",
+         ||  X2D(Substr(Addr,23,2))":",
+         ||  X2D(Substr(Addr,25,2))":",
+         ||  X2D(Substr(Addr,27,2))":",
+         ||  X2D(Substr(Addr,29,2))":",
+         ||  X2D(Substr(Addr,31,2))
+    Otherwise Return "unknown type" Type
+  End
+
+ReloTermC:
+  Parse Arg Code
+  Select
+    When Code='01' then
+      Return "Canceled by VMRELOCATE CANCEL command"
+    When Code='02' then
+      Return "Canceled by CPHX command"
+    When Code='03' then
+      Return "Canceled due to lost ISFC connection"
+    When Code='04' then
+      Return "Canceled due to MAXTOTAL time limit exceeded"
+    When Code='05' then
+      Return "Canceled due to MAXQUIESCE time limit exceeded"
+    When Code='06' then
+      Return "Canceled due to eligibility violation"
+    When Code='07' then
+      Return "Canceled due to virtual machine action"
+    When Code='08' then
+      Return "Canceled due to internal processing error"
+    When Code='09' then
+      Return "Canceled because CP exit rejected the command"
+    When Code='11' then
+      Return "Canceled because CP exit gave invalid return code"
+    Otherwise Retun "Invalid or undocumented RC" Code
+  End
+
+SSIMode:
+  Parse Arg Mode
+  Select
+    When Mode='01' Then Return "Stable"
+    When Mode='02' Then Return "In-flux"
+    When Mode='03' Then Return "Safe"
+    Otherwise
+  End
+
+SSIMemState:
+  Parse Arg State
+  Select
+    When State='00' Then Return "Down"
+    When State='01' Then Return "Joining"
+    When State='02' Then Return "Joined"
+    When State='03' Then Return "Leaving"
+    When State='04' Then Return "Isolated"
+    When State='05' Then Return "Suspended"
+    When State='80' Then Return "Unknown"
+    Otherwise
+  End
+
+VSwitchStat:
+  Parse Arg VSwStatus
+  OutVSw=""
+  PGName=Substr(VSwStatus,1,8)
+  If PGName \= "        " then
+    OutVSw="Port group " || Strip(PGName) || ", "
+  OutVSw=OutVSw"RDev:"C2X(Substr(VSwStatus,9,2))
+  OutVSw=OutVSw", portNo:"C2X(Substr(VSwStatus,11,1))
+  OutVSw=OutVSw"," CSIVPTST(Substr(VSwStatus,12,1))
+  OutVSw=OutVSw || CSIVPRSN(Substr(VSwStatus,13,1))
+  OutVSw=OutVSw", Uplink" CSIVST(Substr(VSwStatus,21,1))
+  OutVSw=OutVSw || CSIVER(Substr(VSwStatus,23,1))
+  Return OutVSw
+
+HSIBrdgStat:
+  Parse Arg HSIStatus
+  OutHSI="RDev:"C2X(Substr(HSIStatus,1,2))
+  OutHSI=OutHSI"," CSIVSB(Substr(HSIStatus,3,1))
+  OutHSI=OutHSI || CSIVER(Substr(HSIStatus,4,1))
+  Return OutHSI
+
+GVSwStat:
+  Parse Arg GVSwStatus
+  OutGVSw="Remote sys:" Strip(Substr(GVSwStatus,1,8))
+  OutGVSw=OutGVSW", local VSwitch:" Strip(Substr(GVSwStatus,9,8))
+  OutGVSw=OutGVSW", local sys:" Strip(Substr(GVSwStatus,17,8))
+  OutGVSw=OutGVSW", MAC addr:" MAC(Substr(GVSwStatus,27,6))
+  OutGVSw=OutGVSW", port grp:" Strip(Substr(GVSwStatus,33,8))
+  OutGVSw=OutGVSw", PChId:"C2X(Substr(GVSwStatus,41,2))
+  If Substr(GVSwStatus,43,1) = '00'X Then
+    OutGVSW=OutGVSw" (not valid)"
+  OutGVSw=OutGVSw", portNo:"C2X(Substr(GVSwStatus,44,1))
+  Return OutGVSw
+
+IVLStat:
+  Parse Arg IVLStatus
+  OutIVL="Domain" Substr(IVLStatus,1,1)
+  OutIVL=OutIVL", portNo:"C2X(Substr(IVLStatus,3,1))
+  Return OutIVL
+
+CSIVPTST:
+  Parse Arg PSt
+  Select
+    When PSt='00' then Return "error"
+    When PSt='02' then Return "suspended"
+    When PSt='03' then Return "waiting"
+    When PSt='04' then Return "active"
+    Otherwise Return "unknown code" PSt
+  End
+
+CSIVPRSN:
+  Parse Arg PSR
+  Select
+    When PSR='00' then Return ""
+    When PSR='01' then Return " (pending QDIO action)"
+    When PSR='02' then Return " (pending routing assignment)"
+    When PSR='03' then Return " (port is inoperable)"
+    When PSR='04' then Return " (abend occurred while processing port)"
+    When PSR='05' then Return " (pending fail-back Rdev to link agg)"
+    When PSR='06' then Return " (waiting for LACP to add port)"
+    When PSR='07' then Return " (Port Sys ID and/or Key do not match)"
+    When PSR='08' then Return " (port marked inop by partner via LACP)"
+    When PSR='09' then Return " (LACP not enabled on partner switchport)"
+    Otherwise Return " (unknown code "PSR")"
+  End
+
+CSIVST:
+  Parse Arg VSwUp
+  Select
+    When VSwUp='01' then Return "VSwitch defined"
+    When VSwUp='02' then Return "controller not available"
+    When VSwUp='03' then Return "operator intervention required"
+    When VSwUp='04' then Return "disconnected"
+    When VSwUp='05' then Return "VDevs attached to controller"
+    When VSwUp='06' then Return "OSA initialization in progress"
+    When VSwUp='07' then Return "OSA device not ready"
+    When VSwUp='08' then Return "OSA device ready"
+    When VSwUp='09' then Return "OSA devices being detached"
+    When VSwUp='0A' then Return "VSwitch delete pending"
+    When VSwUp='0B' then Return "VSwitch failover recovering"
+    When VSwUp='0C' then Return "autorestart in progress"
+    Otherwise Return "unknown code" VSwUp
+  End
+
+CSIVER:
+  Parse Arg RDE
+  O=", RDev error: "
+  Select
+    When RDE='00' then Return ""
+    When RDE='01' then Return O"portname conflict"
+    When RDE='02' then Return O"no Layer 2 support"
+    When RDE='03' then Return O"RDev does not exist"
+    When RDE='04' then Return O"RDev is attached elsewhere"
+    When RDE='05' then Return O"RDev not compatible type"
+    When RDE='06' then Return O"Initialization error"
+    When RDE='07' then Return O"stalled OSA"
+    When RDE='08' then Return O"stalled controller"
+    When RDE='09' then Return O"controller connection severed"
+    When RDE='0A' then Return O"Prim or Sec routing conflict"
+    When RDE='0B' then Return O"device is offline"
+    When RDE='0C' then Return O"device was detached"
+    When RDE='0D' then Return O"type mismatch (IP/Ethernet)"
+    When RDE='0E' then Return O"insufficient storage in controller"
+    When RDE='0F' then Return O"TCP/IP configuration conflict"
+    When RDE='10' then Return O"no Link Aggregation support"
+    When RDE='11' then Return O"OSA-E attribute mismatch"
+    When RDE='12' then Return O"RESERVED"
+    When RDE='13' then Return O"OSA-E is not ready"
+    When RDE='14' then Return O"RESERVED"
+    When RDE='15' then Return O"attempting restart for device"
+    When RDE='16' then Return O"exclusive use error"
+    When RDE='17' then Return O"device state invalid"
+    When RDE='18' then Return O"port number invalid for device"
+    When RDE='19' then Return O"no OSA Connection Isolation"
+    When RDE='1A' then Return O"EQID mismatch"
+    When RDE='1B' then Return O"incompatible controller"
+    When RDE='1C' then Return O"no HiperSockets Bridge support"
+    When RDE='1D' then Return O"error on initialisation of HSI Bridge"
+    When RDE='1E' then Return O"no reflective relay"
+    When RDE='1F' then Return O"reflective relay error"
+    When RDE='20' then Return O"no VEPA support"
+    When RDE='21' then Return O"SWITCHOVER command issued"
+    When RDE='22' then Return O"no Priority Queuing"
+    Otherwise Return O"unknown code" RDE
+  End
+
+CSIVSB:
+  Parse Arg BPSt
+  Select
+    When BPSt='01' then Return "bridge port defined"
+    When BPSt='02' then Return "controller not available"
+    When BPSt='03' then Return "operator intervention required"
+    When BPSt='04' then Return "disconnected"
+    When BPSt='05' then Return "VDevs attached to controller"
+    When BPSt='06' then Return "initialization in progress"
+    When BPSt='07' then Return "device not ready"
+    When BPSt='08' then Return "device is active bridge port"
+    When BPSt='09' then Return "devices being detached"
+    When BPSt='0A' then Return "VSwitch delete pending"
+    When BPSt='0B' then Return "VSwitch failover recovering"
+    When BPSt='0C' then Return "autorestart in progress"
+    Otherwise Return "unknown code" BPSt
+  End
